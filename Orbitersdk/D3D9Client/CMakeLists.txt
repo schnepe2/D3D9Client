@@ -58,6 +58,7 @@ set(SourceFiles
 	VVessel.cpp
 	WindowMgr.cpp
 	ZTreeMgr.cpp
+	Tilemgr2_imp.hpp
 )
 
 set(IncludeFiles
@@ -135,6 +136,8 @@ set(ShaderFiles
 	${ShaderDir}/Surface.fx
 	${ShaderDir}/Vessel.fx
 )
+
+source_group(Shaders FILES ${ShaderFiles})
 
 add_library(D3D9Client MODULE
 	${SourceFiles}
