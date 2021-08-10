@@ -44,7 +44,7 @@ echo   ^.^.^.
 
 :: --- Update working copy & get revision number
 REM svn update --quiet -rHEAD %BASE_DIR%
-for /F "tokens=*" %%i IN ('git rev-parse --short origin') DO set REVISION=%%i
+for /F "tokens=*" %%i IN ('git rev-parse --short HEAD') DO set REVISION=%%i
 set ZIP_NAME=D3D9Client%VERSION%[%REVISION%]-forOrbiter-x64
 
 
