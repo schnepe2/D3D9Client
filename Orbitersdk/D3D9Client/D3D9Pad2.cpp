@@ -34,15 +34,6 @@
 // Sketchpad2 Interface
 // ===============================================================================================
 
-
-bool D3D9Pad::IsTexture(HSURFNATIVE pSrc)
-{
-	LPDIRECT3DRESOURCE9 pResource = static_cast<LPDIRECT3DRESOURCE9>(pSrc);
-	if (pResource->GetType() == D3DRTYPE_TEXTURE) return true;
-	return false;
-}
-
-
 // ===============================================================================================
 //
 void D3D9Pad::GetRenderSurfaceSize(LPSIZE size)
@@ -272,18 +263,17 @@ void D3D9Pad::ColorKey(SURFHANDLE hSrc, const LPRECT _s, int tx, int ty)
 
 // ===============================================================================================
 //
-void D3D9Pad::CopyRectNative(HSURFNATIVE pSrc, const LPRECT _s, int tx, int ty)
+void D3D9Pad::CopyRectNative(LPDIRECT3DTEXTURE9 pSrc, const LPRECT _s, int tx, int ty)
 {
 #ifdef SKPDBG 
 	Log("CopyRectNative(0x%X)", DWORD(pSrc));
 #endif
 
-	assert(IsTexture(pSrc));
-	TexChangeNative((LPDIRECT3DTEXTURE9)pSrc);
+	TexChangeNative(pSrc);
 
 	if (Topology(TRIANGLE)) {
 
-		LPRECT s = CheckRectNative((LPDIRECT3DTEXTURE9)pSrc, _s);
+		LPRECT s = CheckRectNative(pSrc, _s);
 
 		int h = abs(s->bottom - s->top);
 		int w = abs(s->right - s->left);
@@ -307,18 +297,17 @@ void D3D9Pad::CopyRectNative(HSURFNATIVE pSrc, const LPRECT _s, int tx, int ty)
 
 // ===============================================================================================
 //
-void D3D9Pad::StretchRectNative(HSURFNATIVE pSrc, const LPRECT _s, const LPRECT t)
+void D3D9Pad::StretchRectNative(LPDIRECT3DTEXTURE9 pSrc, const LPRECT _s, const LPRECT t)
 {
 #ifdef SKPDBG 
 	Log("StretchRectNative(0x%X)", DWORD(pSrc));
 #endif
 
-	assert(IsTexture(pSrc));
-	TexChangeNative((LPDIRECT3DTEXTURE9)pSrc);
+	TexChangeNative(pSrc);
 
 	if (Topology(TRIANGLE)) {
 
-		LPRECT s = CheckRectNative((LPDIRECT3DTEXTURE9)pSrc, _s);
+		LPRECT s = CheckRectNative(pSrc, _s);
 
 		AddRectIdx(vI);
 
@@ -339,63 +328,57 @@ void D3D9Pad::StretchRectNative(HSURFNATIVE pSrc, const LPRECT _s, const LPRECT 
 
 // ===============================================================================================
 //
-void D3D9Pad::CopyQuadNative(HSURFNATIVE pSrc, const LPRECT _s, const FVECTOR2 *pt, const skpPin *pin, int npin)
+void D3D9Pad::CopyTetragon(SURFHANDLE hSrc, const LPRECT _s, const FVECTOR2 tp[4])
 {
 #ifdef SKPDBG 
-	Log("CopyQuadNative(0x%X)", DWORD(pSrc));
+	Log("CopyTetragon(0x%X)", DWORD(pSrc));
 #endif
+	FVECTOR2 sp[4];
+	FVECTOR2 a, b, c, d;
 
-	assert(IsTexture(pSrc));
-	TexChangeNative((LPDIRECT3DTEXTURE9)pSrc);
-	
-	IVECTOR2 spn = { 0, 0 };
-	FVECTOR2 tpn = 0.0f;
+	DWORD fn = SKPSW_TEXTURE | SKPSW_CENTER;
 
-	if (Topology(TRIANGLE)) {
+	TexChange(hSrc);
 
-		LPRECT s = CheckRectNative((LPDIRECT3DTEXTURE9)pSrc, _s);
+	if (Topology(TRIANGLE))
+	{
+
+		LPRECT s = CheckRect(hSrc, _s);
 
 		s->bottom--;
 		s->right--;
 
-		if (!pin) {
-			tpn = (pt[0] + pt[1] + pt[2] + pt[3]) * 0.25f;
-			spn = { (s->left + s->right) / 2 , (s->top + s->bottom) / 2 };
+		sp[0] = FVECTOR2(s->left, s->top);
+		sp[1] = FVECTOR2(s->left, s->bottom);
+		sp[2] = FVECTOR2(s->right, s->bottom);
+		sp[3] = FVECTOR2(s->right, s->top);
+
+		// Create indices
+		for (int i = 0; i < 11; i++)
+		{
+			WORD q = vI + i;
+			Idx[iI++] = q + 0; Idx[iI++] = q + 1; Idx[iI++] = q + 5;
+			Idx[iI++] = q + 0; Idx[iI++] = q + 5; Idx[iI++] = q + 4;
 		}
-		else if (npin == 1) {
-			spn = pin->src;
-			tpn = pin->tgt;
+
+		// Create grid points
+		int j = 0;
+		for (int i = 0; i < 4; i++)
+		{
+			float x = float(i) * 0.333333f;
+
+			a = lerp(tp[0], tp[3], x);
+			b = lerp(tp[1], tp[2], x);
+			c = lerp(sp[0], sp[3], x);
+			d = lerp(sp[1], sp[2], x);
+
+			for (int k = 0; k < 4; k++) {
+				FVECTOR2 tv = lerp(a, b, float(k) * 0.333333f);
+				FVECTOR2 sv = lerp(c, d, float(k) * 0.333333f);
+				Vtx[vI].fnc = fn;
+				SkpVtxFF(Vtx[vI++], tv.x, tv.y, sv.x, sv.y);			
+			}
 		}
-
-		Idx[iI++] = vI + 0;
-		Idx[iI++] = vI + 1;
-		Idx[iI++] = vI + 4;
-
-		Idx[iI++] = vI + 1;
-		Idx[iI++] = vI + 2;
-		Idx[iI++] = vI + 4;
-
-		Idx[iI++] = vI + 2;
-		Idx[iI++] = vI + 3;
-		Idx[iI++] = vI + 4;
-
-		Idx[iI++] = vI + 3;
-		Idx[iI++] = vI + 0;
-		Idx[iI++] = vI + 4;
-
-		SkpVtxFI(Vtx[vI++], pt[0].x, pt[0].y, s->left, s->top);
-		SkpVtxFI(Vtx[vI++], pt[1].x, pt[1].y, s->left, s->bottom);
-		SkpVtxFI(Vtx[vI++], pt[2].x, pt[2].y, s->right, s->bottom);
-		SkpVtxFI(Vtx[vI++], pt[3].x, pt[3].y, s->right, s->top);
-		SkpVtxFI(Vtx[vI++], tpn.x, tpn.y, spn.x, spn.y);
-
-		DWORD x = SKPSW_TEXTURE | SKPSW_CENTER;
-
-		Vtx[vI - 1].fnc = x;
-		Vtx[vI - 2].fnc = x;
-		Vtx[vI - 3].fnc = x;
-		Vtx[vI - 4].fnc = x;
-		Vtx[vI - 5].fnc = x;
 	}
 }
 
@@ -674,13 +657,9 @@ bool D3D9Pad::TexChangeNative(LPDIRECT3DTEXTURE9 hNew)
 //
 void D3D9Pad::TexChange(SURFHANDLE hNew)
 {
-	static bool bOnce = true;
-
 	if (!SURFACE(hNew)->IsTexture()) {
-		if (bOnce) {
-			LogErr("Sketchpad2: Source is not a texture");
-			bOnce = false;
-		}
+		LogErr("Sketchpad2: Source is not a texture");
+		HALT();
 		return;
 	}
 
@@ -688,7 +667,7 @@ void D3D9Pad::TexChange(SURFHANDLE hNew)
 
 	if (SURFACE(hNew)->IsColorKeyEnabled()) {
 		bColorKey = true;
-		cColorKey = SURFACE(hNew)->ClrKey;
+		cColorKey = D3DXCOLOR(SURFACE(hNew)->ColorKey);
 	}
 	else {
 		bColorKey = false;
@@ -699,7 +678,8 @@ void D3D9Pad::TexChange(SURFHANDLE hNew)
 
 // ===============================================================================================
 //
-int D3D9Pad::DrawSketchMesh(SKETCHMESH _hMesh, DWORD grp, DWORD flags, SURFHANDLE hTex)
+/*
+int D3D9Pad::DrawSketchMesh(SKETCHMESH _hMesh, DWORD grp, Sketchpad::MeshFlags flags, SURFHANDLE hTex)
 {
 
 #ifdef SKPDBG 
@@ -771,12 +751,12 @@ int D3D9Pad::DrawSketchMesh(SKETCHMESH _hMesh, DWORD grp, DWORD flags, SURFHANDL
 	HR(FX->End());
 
 	return hMesh->GroupCount();
-}
+}*/
 
 
 // ===============================================================================================
 //
-int D3D9Pad::DrawMeshGroup(MESHHANDLE hMesh, DWORD grp, DWORD flags, SURFHANDLE hTex)
+int D3D9Pad::DrawMeshGroup(MESHHANDLE hMesh, DWORD grp, Sketchpad::MeshFlags flags, SURFHANDLE hTex)
 {
 #ifdef SKPDBG 
 	Log("DrawMeshGroup(0x%X, gpr=%u, flags=0x%X, hTex=0x%X)", DWORD(hMesh), grp, flags, DWORD(hTex));
@@ -818,13 +798,13 @@ int D3D9Pad::DrawMeshGroup(MESHHANDLE hMesh, DWORD grp, DWORD flags, SURFHANDLE 
 		HR(FX->SetBool(eTexEn, false));
 	}
 
-	HR(FX->SetBool(eShade, (flags&MF_SMOOTH_SHADE) != 0));
+	HR(FX->SetBool(eShade, (flags & MeshFlags::SMOOTH_SHADE) != 0));
 	HR(FX->SetValue(ePen, &pencolor.fclr, sizeof(D3DXCOLOR)));
 
 	HR(FX->CommitChanges());
 
-	if (flags&MF_CULL_NONE) pDev->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
-	else				    pDev->SetRenderState(D3DRS_CULLMODE, D3DCULL_CCW);
+	if (flags&MeshFlags::CULL_NONE) pDev->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+	else							pDev->SetRenderState(D3DRS_CULLMODE, D3DCULL_CCW);
 
 	if (bDepthEnable && pDep) {
 		pDev->SetRenderState(D3DRS_ZENABLE, 1);
@@ -925,7 +905,7 @@ bool SketchMesh::LoadMeshFromHandle(MESHHANDLE hMesh)
 	// -----------------------------------------------------------------------
 
 	nTex = oapiMeshTextureCount(hMesh) + 1;
-	Tex = new LPD3D9CLIENTSURFACE[nTex];
+	Tex = new SURFHANDLE[nTex];
 	Tex[0] = 0; // 'no texture'
 	for (DWORD i = 1; i<nTex; i++) Tex[i] = SURFACE(oapiGetTextureHandle(hMesh, i));
 

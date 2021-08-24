@@ -63,7 +63,7 @@ public:
 	 */
 	static void GlobalExit ();
 
-	void clbkEvent(DWORD evnt, LONG_PTR context);
+	void clbkEvent(DWORD evnt, DWORD_PTR context);
 
 	MESHHANDLE GetMesh (UINT idx);
 	bool GetMinMaxDistance(float *zmin, float *zmax, float *dmin);
@@ -221,7 +221,7 @@ private:
 	double tCheckLight;		// time for next lighting check
 	float ExhaustLength;
 
-	static class D3D9ClientSurface *defreentrytex, *defexhausttex, *tHUD;
+	static class SurfNative *defreentrytex, *defexhausttex;
 };
 
 #endif // !__VVESSEL_H

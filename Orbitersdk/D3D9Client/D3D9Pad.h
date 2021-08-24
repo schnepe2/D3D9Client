@@ -23,11 +23,11 @@
 
 #include "OrbiterAPI.h"
 #include "D3D9Client.h"
-#include "Sketchpad2.h"
 #include <d3d9.h>
 #include <d3dx9.h>
 #include <memory>
 #include <stack>
+#include "DrawAPI.h"
 
 using namespace oapi;
 
@@ -193,7 +193,7 @@ template <typename Type> int CreatePolyIndexList(const Type *pt, short npt, WORD
  * \brief The D3D9Pad class defines the context for 2-D drawing using
  *  DirectX calls.
  */
-class D3D9Pad : public Sketchpad3
+class D3D9Pad : public Sketchpad
 {
 	friend D3D9Text;
 
@@ -222,7 +222,6 @@ public:
 	 * \param s surface handle
 	 */
 	explicit D3D9Pad(SURFHANDLE s, const char *name = NULL);
-	explicit D3D9Pad(const char *name, HSURFNATIVE hSrf);
 	explicit D3D9Pad(const char *name = NULL);
 
 	/**
@@ -245,26 +244,13 @@ public:
 	static void GlobalExit();
 
 	/**
-	 * \brief Return the Windows device context handle, if applicable.
-	 * \return device context handle
-	 * \default None, returns NULL.
-	 * \note The device context returned by this function should not be
-	 *   released (e.g. with ReleaseDC). The device context is released
-	 *   automatically when the Sketchpad instance is destroyed.
-	 * \note This method should be regarded as temporary. Ultimately, the
-	 *   device-dependent drawing mechanism should be hidden outside the
-	 *   sketchpad implementation.
-	 */
-	HDC GetDC();
-
-	/**
 	 * \brief Selects a new font to use.
 	 * \param font pointer to font resource
 	 * \return Previously selected font.
 	 * \default None, returns NULL.
 	 * \sa oapi::Font, oapi::GraphicsClient::clbkCreateFont
 	 */
-	oapi::Font  *SetFont (oapi::Font *font) const;
+	oapi::Font  *SetFont (oapi::Font *font);
 
 	/**
 	 * \brief Selects a new pen to use.
@@ -273,7 +259,7 @@ public:
 	 * \default None, returns NULL.
 	 * \sa oapi::Pen, oapi::GraphicsClient::clbkCreatePen
 	 */
-	oapi::Pen   *SetPen (oapi::Pen *pen) const;
+	oapi::Pen   *SetPen (oapi::Pen *pen);
 
 	/**
 	 * \brief Selects a new brush to use.
@@ -282,7 +268,7 @@ public:
 	 * \default None, returns NULL.
 	 * \sa oapi::Brush, oapi::GraphicsClient::clbkCreateBrush
 	 */
-	oapi::Brush *SetBrush (oapi::Brush *brush) const;
+	oapi::Brush *SetBrush (oapi::Brush *brush);
 
 	/**
 	 * \brief Set horizontal and vertical text alignment.
@@ -406,8 +392,6 @@ public:
 	 */
 	bool Text (int x, int y, const char *str, int len);
 
-	bool TextW (int x, int y, const LPWSTR str, int len = -1);
-
 	/**
 	 * \brief Draw a text string into a rectangle.
 	 * \param x1 left edge [pixel]
@@ -491,8 +475,13 @@ public:
 	 */
 	void Polyline (const oapi::IVECTOR2 *pt, int npt);
 
+	/**
+	 * \brief Obsolete. Will return NULL
+	 * \return null
+	 */
+	HDC GetDC();
 
-
+	bool TextW(int x, int y, const LPWSTR str, int len = -1);
 
 	// ===============================================================================
 	// Sketchpad2 Additions
@@ -503,8 +492,7 @@ public:
 	void SetGlobalLineScale(float width = 1.0f, float pattern = 1.0f);
 	void SetWorldTransform(const FMATRIX4 *pWT = NULL);
 	void SetWorldTransform2D(float scale=1.0f, float rot=0.0f, IVECTOR2 *c=NULL, IVECTOR2 *t=NULL);
-	int  DrawSketchMesh(SKETCHMESH hMesh, DWORD grp, DWORD flags = MF_SMOOTH_SHADE, SURFHANDLE hTex = NULL);
-	int  DrawMeshGroup(MESHHANDLE hMesh, DWORD grp, DWORD flags = MF_SMOOTH_SHADE, SURFHANDLE hTex = NULL);
+	int  DrawMeshGroup(MESHHANDLE hMesh, DWORD grp, Sketchpad::MeshFlags flags, SURFHANDLE hTex = NULL);
 	void CopyRect(SURFHANDLE hSrc, const LPRECT src, int tx, int ty);
 	void StretchRect(SURFHANDLE hSrc, const LPRECT src, const LPRECT tgt);
 	void RotateRect(SURFHANDLE hSrc, const LPRECT src, int cx, int cy, float angle, float sw = 1.0f, float sh = 1.0f);
@@ -534,19 +522,17 @@ public:
 	const FMATRIX4 *GetColorMatrix();
 	void SetColorMatrix(const FMATRIX4 *pMatrix = NULL);
 	void SetBrightness(const FVECTOR4 *pBrightness = NULL);
-	FVECTOR4 GetRenderParam(int param);
-	void SetRenderParam(int param, const FVECTOR4 *data = NULL);
-	void SetBlendState(DWORD dwState = SKPBS_ALPHABLEND);
+	FVECTOR4 GetRenderParam(RenderParam param);
+	void SetRenderParam(RenderParam param, const FVECTOR4 *data = NULL);
+	void SetBlendState(BlendState dwState);
 	FMATRIX4 GetWorldTransform() const;
 	void PushWorldTransform();
 	void PopWorldTransform();
 	void SetWorldScaleTransform2D(const FVECTOR2 *scl = NULL, const IVECTOR2 *trl = NULL);
 	void GradientFillRect(const LPRECT rect, DWORD c1, DWORD c2, bool bVertical = false);
-	void ColorFill(const FVECTOR4 &color, const LPRECT tgt);
+	void ColorFill(DWORD color, const LPRECT tgt);
 	void StretchRegion(const skpRegion *rgn, SURFHANDLE hSrc, const LPRECT out);
-	void CopyRectNative(HSURFNATIVE pSrc, const LPRECT s, int tx, int ty);
-	void StretchRectNative(HSURFNATIVE pSrc, const LPRECT s, const LPRECT t);
-	void CopyQuadNative(HSURFNATIVE pSrc, const LPRECT _s, const FVECTOR2 *pt, const skpPin *pin = NULL, int npin = 0);
+	void CopyTetragon(SURFHANDLE pSrc, const LPRECT _s, const FVECTOR2 pt[4]);
 	void ColorCompatibility(bool bEnable);
 	
 
@@ -575,7 +561,10 @@ public:
 	LPDIRECT3DSURFACE9 GetRenderTarget() const { return pTgt; }
 	bool IsStillDrawing() const { return bBeginDraw; }
 	void LoadDefaults();
-	bool IsNative() const { return bNative; }
+
+	void CopyRectNative(LPDIRECT3DTEXTURE9 pSrc, const LPRECT s, int tx, int ty);
+	void StretchRectNative(LPDIRECT3DTEXTURE9 pSrc, const LPRECT s, const LPRECT t);
+	
 
 private:
 
@@ -587,7 +576,6 @@ private:
 	bool HasBrush() const;
 	bool IsDashed() const;
 	bool IsAlphaTarget() const;
-	bool IsTexture(HSURFNATIVE pSrc);
 
 	float GetPenWidth() const;
 
@@ -622,7 +610,6 @@ private:
 	SkpColor		 bkcolor;
 
 	bool			 bColorComp;
-	bool			 bNative;
 	bool			 bColorKey;
 	bool			 bEnableScissor;
 	bool			 bDepthEnable;
@@ -638,7 +625,7 @@ private:
 	D3DXMATRIX mV, mP, mW, mO;
 	D3DXVECTOR4 vTarget;
 	DWORD bkmode;
-	DWORD dwBlendState;
+	BlendState dwBlendState;
 	TAlign_horizontal tah;
 	TAlign_vertical tav;
 	float linescale, pattern;
@@ -760,8 +747,8 @@ public:
 	 * \note if the specified face name is not recognised, then 'sans' is
 	 *   selected for \e prop==true, and 'fixed' is selected for \e prop==false.
 	 */
-	D3D9PadFont (int height, bool prop, const char *face, Style style=NORMAL, int orientation=0, DWORD flags=0);
-	D3D9PadFont (int height, char *face, int width = 0, int weight = 400, int gcFontStyle = 0, float spacing = 0.0f);
+	D3D9PadFont (int height, bool prop, const char *face, FontStyle style = FontStyle::FONT_NORMAL, int orientation=0, DWORD flags=0);
+	D3D9PadFont (int height, char *face, int width = 0, int weight = 400, FontStyle style = FontStyle::FONT_NORMAL, float spacing = 0.0f);
 	/**
 	 * \brief Font destructor.
 	 */
@@ -811,7 +798,6 @@ private:
 	int width;
 	SkpColor clr;
 	HPEN hPen;
-	//static LPDIRECT3DDEVICE9 pDev;
 };
 
 
@@ -840,7 +826,6 @@ public:
 private:
 	SkpColor clr;
 	HBRUSH hBrush;
-	//static LPDIRECT3DDEVICE9 pDev;
 };
 
 
@@ -886,7 +871,7 @@ private:
 	DWORD nTex;                 // number of mesh textures
 
 	LPDIRECT3DDEVICE9 pDev;
-	LPD3D9CLIENTSURFACE *Tex;	// list of mesh textures
+	SURFHANDLE *Tex;	// list of mesh textures
 	SKETCHGRP *Grp;            // list of mesh groups
 	D3DXCOLOR *Mtrl;
 };

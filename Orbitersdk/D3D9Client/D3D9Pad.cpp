@@ -27,7 +27,6 @@
 #include "D3D9Config.h"
 #include "Log.h"
 #include "Mesh.h"
-#include "Sketchpad2.h"
 
 using namespace oapi;
 
@@ -41,7 +40,7 @@ struct FontCache {
 	int         orient;
 	bool        prop;
 	char        face[64];
-	Font::Style style;
+	FontStyle	style;
 	D3D9TextPtr pFont;
 };
 
@@ -50,7 +49,7 @@ struct QFontCache {
 	int         width;
 	int			weight;
 	char        face[64];
-	int			style;
+	FontStyle	style;
 	float		spacing;
 	D3D9TextPtr pFont;
 };
@@ -258,7 +257,7 @@ void D3D9Pad::LoadDefaults()
 	tCurrent = NONE;
 	Change = SKPCHG_ALL;
 	bkmode = TRANSPARENT;
-	dwBlendState = SKPBS_ALPHABLEND;
+	dwBlendState = Sketchpad::BlendState::ALPHABLEND;
 
 	bColorComp = true;
 	bLine = false;
@@ -293,7 +292,7 @@ void D3D9Pad::LoadDefaults()
 // Constructor will create D3D9Pad interface but doesn't prepare it for drawing.
 // BeginDrawing() must be called
 //
-D3D9Pad::D3D9Pad(SURFHANDLE s, const char *_name) : Sketchpad3(s),
+D3D9Pad::D3D9Pad(SURFHANDLE s, const char *_name) : Sketchpad(s),
 	_isSaveBuffer(false),
 	_saveBuffer(NULL),
 	_saveBufferSize(0)
@@ -303,7 +302,6 @@ D3D9Pad::D3D9Pad(SURFHANDLE s, const char *_name) : Sketchpad3(s),
 #endif
 	if (_name) strcpy_s(name, 32, _name);
 	else strcpy_s(name, 32, "NoName");
-	bNative = false;
 	Reset();
 	LoadDefaults();
 }
@@ -315,28 +313,7 @@ D3D9Pad::D3D9Pad(SURFHANDLE s, const char *_name) : Sketchpad3(s),
 // Constructor will create D3D9Pad interface but doesn't prepare it for drawing.
 // BeginDrawing() must be called
 //
-D3D9Pad::D3D9Pad(const char *_name, HSURFNATIVE hSrf) : Sketchpad3(hSrf),
-_isSaveBuffer(false),
-_saveBuffer(NULL),
-_saveBufferSize(0)
-{
-#ifdef SKPDBG 
-	Log("#### Sketchpad Interface Created (Native)");
-#endif
-	if (_name) strcpy_s(name, 32, _name);
-	else strcpy_s(name, 32, "NoName");
-	bNative = true;
-	Reset();
-	LoadDefaults();
-}
-
-
-
-// ===============================================================================================
-// Constructor will create D3D9Pad interface but doesn't prepare it for drawing.
-// BeginDrawing() must be called
-//
-D3D9Pad::D3D9Pad(const char *_name) : Sketchpad3(NULL),
+D3D9Pad::D3D9Pad(const char *_name) : Sketchpad(NULL),
 	_isSaveBuffer(false),
 	_saveBuffer(NULL),
 	_saveBufferSize(0)
@@ -346,7 +323,6 @@ D3D9Pad::D3D9Pad(const char *_name) : Sketchpad3(NULL),
 #endif
 	if (_name) strcpy_s(name, 32, _name);
 	else strcpy_s(name, 32, "NoName");
-	bNative = false;
 	Reset();
 	LoadDefaults();
 }
@@ -390,7 +366,10 @@ void D3D9Pad::BeginDrawing(LPDIRECT3DSURFACE9 pRenderTgt, LPDIRECT3DSURFACE9 pDe
 
 	if (vI != 0) LogErr("Sketchpad %s has received drawing commands outside Begin() End() pair", _PTR(this));
 
-	if (bBeginDraw == true) _wassert(L"D3D9Pad::BeginDrawing() called multiple times", _CRT_WIDE(__FILE__), __LINE__);
+	if (bBeginDraw == true) {
+		LogErr("D3D9Pad::BeginDrawing() called multiple times");
+		HALT();
+	}
 	
 	Reset();
 	
@@ -424,7 +403,10 @@ void D3D9Pad::EndDrawing()
 	Log("==== EndDrawing ====\n");
 #endif
 
-	if (bBeginDraw == false) _wassert(L"D3D9Pad::EndDrawing() called without BeginDrawing()", _CRT_WIDE(__FILE__), __LINE__);
+	if (bBeginDraw == false) {
+		LogErr("D3D9Pad::EndDrawing() called without BeginDrawing()");
+		HALT();
+	}
 
 	Flush();
 
@@ -442,7 +424,10 @@ void D3D9Pad::EndDrawing()
 //
 bool D3D9Pad::Flush(HPOLY hPoly)
 {
-	if (bBeginDraw == false) _wassert(L"D3D9Pad::Flush() called without BeginDrawing()", _CRT_WIDE(__FILE__), __LINE__);
+	if (bBeginDraw == false) {
+		LogErr("D3D9Pad::Flush() called without BeginDrawing()");
+		HALT();
+	}
 	
 	UINT numPasses;
 	static DWORD bkALPHA, bkZEN, bkZW, bkCULL;
@@ -493,25 +478,25 @@ bool D3D9Pad::Flush(HPOLY hPoly)
 		HR(FX->BeginPass(1));
 	}
 
-	if (dwBlend == SKPBS_ALPHABLEND) {
+	if (dwBlend == Sketchpad::BlendState::ALPHABLEND) {
 		pDev->SetRenderState(D3DRS_COLORWRITEENABLE, 0x7);
 		HR(pDev->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE));
 	}
-	else if (dwBlend == SKPBS_COPY) {
+	else if (dwBlend == Sketchpad::BlendState::COPY) {
 		pDev->SetRenderState(D3DRS_COLORWRITEENABLE, 0xF);
 		HR(pDev->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE));
 	}
-	else if (dwBlend == SKPBS_COPY_ALPHA) {
+	else if (dwBlend == Sketchpad::BlendState::COPY_ALPHA) {
 		pDev->SetRenderState(D3DRS_COLORWRITEENABLE, 0x8);
 		HR(pDev->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE));
 	}
-	else if (dwBlend == SKPBS_COPY_COLOR) {
+	else if (dwBlend == Sketchpad::BlendState::COPY_COLOR) {
 		pDev->SetRenderState(D3DRS_COLORWRITEENABLE, 0x7);
 		HR(pDev->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE));
 	}
 
 	if (dwFilter) {
-		if (dwFilter == SKPBS_FILTER_POINT) {
+		if (dwFilter == Sketchpad::BlendState::FILTER_POINT) {
 			pDev->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
 			pDev->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 		}
@@ -587,7 +572,7 @@ void D3D9Pad::SetupDevice(Topo tNew)
 {
 
 	// Check that this is the top one. Only do the check for ones created with oapiGetSketchpad()
-	if (GetSurface()) assert(gc->GetTopInterface() == this);
+	//if (GetSurface()) assert(gc->GetTopInterface() == this);
 
 	// If the queue is filling up, Flush it
 	//
@@ -779,14 +764,21 @@ SkpColor D3D9Pad::ColorComp(const SkpColor &c) const
 //
 HDC D3D9Pad::GetDC()
 {
-	if (GetSurface()) SURFACE(GetSurface())->PrintError(ERR_DC_NOT_AVAILABLE);
+	DWORD *cf = SURFACE(GetSurface())->GetClientFlags();
+
+	if ((*cf & OAPISURF_SKP_GDI_WARN) == 0) {
+		*cf |= OAPISURF_SKP_GDI_WARN;
+		LogErr("Call to obsolete Sketchpad::GetDC() detected. Returned NULL");
+		if (Config->DebugBreak) DebugBreak();
+	}
+
 	return NULL;
 }
 
 
 // ===============================================================================================
 //
-Font *D3D9Pad::SetFont(Font *font) const
+Font *D3D9Pad::SetFont(Font *font)
 {
 	if (cfont == font) return font;
 
@@ -806,7 +798,7 @@ Font *D3D9Pad::SetFont(Font *font) const
 
 // ===============================================================================================
 //
-Brush *D3D9Pad::SetBrush (Brush *brush) const
+Brush *D3D9Pad::SetBrush (Brush *brush)
 {
 	if (cbrush == brush && QBrush.bEnabled == false) return brush;
 
@@ -831,7 +823,7 @@ Brush *D3D9Pad::SetBrush (Brush *brush) const
 
 // ===============================================================================================
 //
-Pen *D3D9Pad::SetPen (Pen *pen) const
+Pen *D3D9Pad::SetPen (Pen *pen)
 {
 	if (cpen == pen && QPen.bEnabled == false) return pen;
 
@@ -1178,6 +1170,11 @@ void D3D9Pad::Line (int x0, int y0, int x1, int y1)
 //
 void D3D9Pad::FillRect(int l, int t, int r, int b, SkpColor &c)
 {
+	if (r == l) return;
+	if (b == t) return;
+	if (r < l) swap(r, l);
+	if (b < t) swap(t, b);
+
 #ifdef SKPDBG 
 	Log("FillRect()");
 #endif
@@ -1195,8 +1192,10 @@ void D3D9Pad::FillRect(int l, int t, int r, int b, SkpColor &c)
 //
 void D3D9Pad::Rectangle (int l, int t, int r, int b)
 {
-	if (r <= l) return;
-	if (b <= t) return;
+	if (r == l) return;
+	if (b == t) return;
+	if (r < l) swap(r, l);
+	if (b < t) swap(t, b);
 
 #ifdef SKPDBG 
 	Log("Rectangle()");
@@ -1227,8 +1226,10 @@ void D3D9Pad::Rectangle (int l, int t, int r, int b)
 //
 void D3D9Pad::Ellipse (int x0, int y0, int x1, int y1)
 {
-	if (x1 <= x0) return;
-	if (y1 <= y0) return;
+	if (x1 == x0) return;
+	if (y1 == y0) return;
+	if (x1 < x0) swap(x0, x1);
+	if (y1 < y0) swap(y0, y1);
 
 #ifdef SKPDBG 
 	Log("Ellipse()");
@@ -1785,8 +1786,6 @@ WORD * D3D9Pad::Idx = 0;
 SkpVtx * D3D9Pad::Vtx = 0;
 LPD3DXVECTOR2 D3D9Pad::pSinCos[];
 LPDIRECT3DDEVICE9 D3D9PadFont::pDev = 0;
-//LPDIRECT3DDEVICE9 D3D9PadPen::pDev = 0;
-//LPDIRECT3DDEVICE9 D3D9PadBrush::pDev = 0;
 LPDIRECT3DDEVICE9 D3D9Pad::pDev = 0;
 LPDIRECT3DTEXTURE9 D3D9Pad::pNoise = 0;
 
@@ -1797,8 +1796,9 @@ CRITICAL_SECTION D3D9Pad::LogCrit;
 // ======================================================================
 // class GDIFont
 // ======================================================================
+using namespace oapi;
 
-D3D9PadFont::D3D9PadFont(int height, bool prop, const char *face, Style style, int orientation, DWORD flags) : Font(height, prop, face, style, orientation)
+D3D9PadFont::D3D9PadFont(int height, bool prop, const char *face, FontStyle style, int orientation, DWORD flags) : Font(height, prop, face, style, orientation)
 {
 	char *def_fixedface = "Courier New";
 	char *def_sansface = "Arial";
@@ -1829,9 +1829,10 @@ D3D9PadFont::D3D9PadFont(int height, bool prop, const char *face, Style style, i
 		break;
 	}
 
-	int weight = (style & BOLD) ? FW_BOLD : FW_NORMAL;
-	DWORD italic = (style & ITALIC) ? TRUE : FALSE;
-	DWORD underline = (style & UNDERLINE) ? TRUE : FALSE;
+	int weight = (style & FONT_BOLD) ? FW_BOLD : FW_NORMAL;
+	DWORD italic = (style & FONT_ITALIC) ? TRUE : FALSE;
+	DWORD underline = (style & FONT_UNDERLINE) ? TRUE : FALSE;
+	DWORD strikeout = (style & FONT_STRIKEOUT) ? TRUE : FALSE;
 
 	Quality = NONANTIALIASED_QUALITY;
 
@@ -1848,12 +1849,7 @@ D3D9PadFont::D3D9PadFont(int height, bool prop, const char *face, Style style, i
 	//
 	if (pFont==NULL) {
 
-		//if (Quality == CLEARTYPE_QUALITY) {
-		//	height *= 3;
-		//	Quality = NONANTIALIASED_QUALITY;
-		//}
-
-		HFONT hNew = CreateFont(height, 0, 0, 0, weight, italic, underline, 0, 0, 0, 2, Quality, 49, face);
+		HFONT hNew = CreateFont(height, 0, 0, 0, weight, italic, underline, strikeout, 0, 0, 2, Quality, 49, face);
 
 		pFont = std::make_shared<D3D9Text>(pDev);
 		pFont->Init(hNew);
@@ -1874,18 +1870,18 @@ D3D9PadFont::D3D9PadFont(int height, bool prop, const char *face, Style style, i
 
 	// Create Rotated windows GDI Font for a use with GDIPad ---------------------------
 	//
-	hFont = CreateFontA(height, 0, orientation, orientation, weight, italic, underline, 0, 0, 0, 2, Quality, 49, face);
+	hFont = CreateFontA(height, 0, orientation, orientation, weight, italic, underline, strikeout, 0, 0, 2, Quality, 49, face);
 
 	if (hFont==NULL) {
 		face  = (prop ? def_sansface : def_fixedface);
-		hFont = CreateFont(height, 0, orientation, orientation, weight, italic, underline, 0, 0, 0, 2, Quality, 49, face);
+		hFont = CreateFont(height, 0, orientation, orientation, weight, italic, underline, strikeout, 0, 0, 2, Quality, 49, face);
 	}
 }
 
 
 
-D3D9PadFont::D3D9PadFont(int height, char *face, int width, int weight, int style, float spacing) 
-: Font(height, false, face, Style(0), 0)
+D3D9PadFont::D3D9PadFont(int height, char *face, int width, int weight, FontStyle style, float spacing)
+: Font(height, false, face, style, 0)
 {
 
 	hFont = NULL;
@@ -1904,16 +1900,16 @@ D3D9PadFont::D3D9PadFont(int height, char *face, int width, int weight, int styl
 		break;
 	}
 
-	DWORD italic = (style & gcFont::ITALIC) ? TRUE : FALSE;
-	DWORD underline = (style & gcFont::UNDERLINE) ? TRUE : FALSE;
-	DWORD strikeout = (style & gcFont::STRIKEOUT) ? TRUE : FALSE;
+	DWORD italic = (style & FONT_ITALIC) ? TRUE : FALSE;
+	DWORD underline = (style & FONT_UNDERLINE) ? TRUE : FALSE;
+	DWORD strikeout = (style & FONT_STRIKEOUT) ? TRUE : FALSE;
 
 	Quality = NONANTIALIASED_QUALITY;
 	if (Config->SketchpadFont == 1) Quality = ANTIALIASED_QUALITY;
 	if (Config->SketchpadFont == 2) Quality = PROOF_QUALITY;
 	
-	if (style & gcFont::CRISP) Quality = NONANTIALIASED_QUALITY;
-	if (style & gcFont::ANTIALIAS) Quality = ANTIALIASED_QUALITY;
+	if (style & FONT_CRISP) Quality = NONANTIALIASED_QUALITY;
+	if (style & FONT_ANTIALIAS) Quality = ANTIALIASED_QUALITY;
 	
 	
 	// Create DirectX accelerated font for a use with D3D9Pad ------------------

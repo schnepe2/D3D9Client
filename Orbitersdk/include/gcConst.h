@@ -52,20 +52,19 @@ inline gcCore *gcGetCoreInterface()
 /// \defgroup PixelFormats Common pixelformats for surfaces, for Native Only (i.e. HSURFNATIVE)
 ///@{
 #define OAPISURFACE_PF_MASK				0xFF0000	///< PixelFormat Mask
-#define OAPISURFACE_PF_XRGB				0x000000	///< 32bit RGB no-alpha
-#define OAPISURFACE_PF_ARGB				0x010000	///< 32bit ARGB with-alpha	0xAARRGGBB
-#define OAPISURFACE_PF_RGB565			0x020000	///< 16bit RGB no-alpha
-#define OAPISURFACE_PF_S16R				0x030000	///< Signed integer 16-bit (1-channel)
-#define OAPISURFACE_PF_F32R				0x040000	///< Float 32-bit (1-channel)
-#define OAPISURFACE_PF_F32RG			0x050000	///< Float 64-bit (2-channel)
-#define OAPISURFACE_PF_F32RGBA			0x060000	///< Float 128-bit (4-channel) float4(r,g,b,a)
-#define OAPISURFACE_PF_F16R				0x070000	///< Float 16-bit (1-channel) 
-#define OAPISURFACE_PF_F16RG			0x080000	///< Float 32-bit (2-channel) 
-#define OAPISURFACE_PF_F16RGBA			0x090000	///< Float 64-bit (4-channel) float4(r,g,b,a)
-#define OAPISURFACE_PF_DXT1				0x0A0000	///< Compressed DXT1 format
-#define OAPISURFACE_PF_DXT3				0x0B0000	///< Compressed DXT3 format
-#define OAPISURFACE_PF_DXT5				0x0C0000	///< Compressed DXT5 format
-#define OAPISURFACE_PF_DEPTH			0x0D0000	///< Depth-Stencil Surface (This will cause all other OAPISURFACE_* flags being ignored)
+#define OAPISURFACE_PF_XRGB				0x010000	///< 32bit RGB no-alpha
+#define OAPISURFACE_PF_ARGB				0x020000	///< 32bit ARGB with-alpha	0xAARRGGBB
+#define OAPISURFACE_PF_RGB565			0x030000	///< 16bit RGB no-alpha
+#define OAPISURFACE_PF_S16R				0x040000	///< Signed integer 16-bit (1-channel)
+#define OAPISURFACE_PF_F32R				0x050000	///< Float 32-bit (1-channel)
+#define OAPISURFACE_PF_F32RG			0x060000	///< Float 64-bit (2-channel)
+#define OAPISURFACE_PF_F32RGBA			0x070000	///< Float 128-bit (4-channel) float4(r,g,b,a)
+#define OAPISURFACE_PF_F16R				0x080000	///< Float 16-bit (1-channel) 
+#define OAPISURFACE_PF_F16RG			0x090000	///< Float 32-bit (2-channel) 
+#define OAPISURFACE_PF_F16RGBA			0x0A0000	///< Float 64-bit (4-channel) float4(r,g,b,a)
+#define OAPISURFACE_PF_DXT1				0x0B0000	///< Compressed DXT1 format
+#define OAPISURFACE_PF_DXT3				0x0C0000	///< Compressed DXT3 format
+#define OAPISURFACE_PF_DXT5				0x0D0000	///< Compressed DXT5 format
 #define OAPISURFACE_PF_ALPHA			0x0E0000	///< Alpha only surface 8-bit
 #define OAPISURFACE_PF_GRAY				0x0F0000	///< Grayscale Image 8-bit
 ///@}
@@ -77,7 +76,6 @@ inline gcCore *gcGetCoreInterface()
 #define RENDERPROC_HUD_1ST				0x0001	///< Register a HUD callback to draw under Orbiter's main HUD
 #define RENDERPROC_HUD_2ND				0x0002	///< Register a HUD callback to draw over Orbiter's main HUD
 #define RENDERPROC_PLANETARIUM			0x0003	///< Register a HUD callback to draw into a planetarium view using perspective projection
-#define RENDERPROC_CUSTOMCAM_OVERLAY	0x0004  ///< Register a callback to draw an overlay into a custom camerea view
 #define RENDERPROC_EXTERIOR				0x0005  ///< Register a callback to draw into an exterior vessel view using perspective projection
 ///@}
 
@@ -176,19 +174,6 @@ namespace gcTileFlags
 };
 
 
-/**
-* \brief Flags for 
-*/
-namespace gcFont
-{
-	static const int ITALIC = 0x1;
-	static const int UNDERLINE = 0x2;
-	static const int STRIKEOUT = 0x4;
-	static const int CRISP = 0x8;			///< Override app-default, No Antialiasing
-	static const int ANTIALIAS = 0x10;		///< Override app-default, Use Antialiashing
-};
-
-
 /// \brief Handle to a surface manager's glogal overlay
 typedef void * HOVERLAY;
 /// \brief Handle to a native DirectX9 surface
@@ -214,514 +199,6 @@ typedef void * HPOLY;
 /// \brief Render HUD and Planetarium callback function 
 typedef void(__cdecl *__gcRenderProc)(oapi::Sketchpad *pSkp, void *pParam);
 typedef void(__cdecl *__gcGenericProc)(int iUser, void *pUser, void *pParam);
-
-
-namespace oapi {
-
-	/**
-	* \brief 32-bit floating point 2D vector type.
-	* \note This structure is compatible with the D3DXVECTOR2 type.
-	*/
-	typedef struct FVECTOR2 {
-
-		FVECTOR2()
-		{
-			x = y = 0.0f;
-		}
-
-		FVECTOR2(float q)
-		{
-			x = y = q;
-		}
-
-		FVECTOR2(float _x, float _y)
-		{
-			x = _x;
-			y = _y;
-		}
-
-		FVECTOR2(const POINT &p)
-		{
-			x = float(p.x);
-			y = float(p.y);
-		}
-
-		FVECTOR2(const POINT *p)
-		{
-			x = float(p->x);
-			y = float(p->y);
-		}
-
-		FVECTOR2(const oapi::IVECTOR2 &p)
-		{
-			x = float(p.x);
-			y = float(p.y);
-		}
-
-		inline FVECTOR2 operator* (float f) const
-		{
-			return FVECTOR2(x * f, y * f);
-		}
-
-		inline FVECTOR2 operator/ (float f) const
-		{
-			f = 1.0f / f;
-			return FVECTOR2(x * f, y * f);
-		}
-
-		inline FVECTOR2 operator+ (float f) const
-		{
-			return FVECTOR2(x + f, y + f);
-		}
-
-		inline FVECTOR2 operator- (float f) const
-		{
-			return FVECTOR2(x - f, y - f);
-		}
-
-		inline FVECTOR2 operator+ (const FVECTOR2 &f) const
-		{
-			return FVECTOR2(x + f.x, y + f.y);
-		}
-
-		inline FVECTOR2 operator- (const FVECTOR2 &f) const
-		{
-			return FVECTOR2(x - f.x, y - f.y);
-		}
-
-		float x, y;
-	} FVECTOR2;
-
-
-
-	/**
-	* \brief 32-bit floating point 3D vector type.
-	* \note This structure is compatible with the D3DXVECTOR3 type.
-	*/
-	typedef struct FVECTOR3 {
-
-		FVECTOR3()
-		{
-			x = y = z = 0.0f;
-		}
-
-		FVECTOR3(float q)
-		{
-			x = y = z = q;
-		}
-
-		FVECTOR3(float _x, float _y, float _z)
-		{
-			x = _x;
-			y = _y;
-			z = _z;
-		}
-
-		FVECTOR3(VECTOR3 &v)
-		{
-			x = float(v.x);
-			y = float(v.y);
-			z = float(v.z);
-		}
-
-		inline FVECTOR3& operator*= (float f)
-		{
-			x *= f; y *= f; z *= f;
-			return *this;
-		}
-
-		inline FVECTOR3& operator/= (float f)
-		{
-			// return *this *= (1.0f / f); // nicer?
-			f = 1.0f / f;
-			x *= f; y *= f; z *= f;
-			return *this;
-		}
-
-		inline FVECTOR3& operator+= (float f)
-		{
-			x += f; y += f; z += f;
-			return *this;
-		}
-
-		inline FVECTOR3& operator-= (float f)
-		{
-			x -= f; y -= f; z -= f;
-			return *this;
-		}
-
-		inline FVECTOR3 operator* (float f) const
-		{
-			return FVECTOR3(x * f, y * f, z * f);
-		}
-
-		inline FVECTOR3 operator/ (float f) const
-		{
-			f = 1.0f / f;
-			return FVECTOR3(x * f, y * f, z * f);
-		}
-
-		inline FVECTOR3 operator+ (float f) const
-		{
-			return FVECTOR3(x + f, y + f, z + f);
-		}
-
-		inline FVECTOR3 operator- (float f) const
-		{
-			return FVECTOR3(x - f, y - f, z - f);
-		}
-
-		inline FVECTOR3 operator+ (const FVECTOR3 &f) const
-		{
-			return FVECTOR3(x + f.x, y + f.y, z + f.z);
-		}
-
-		inline FVECTOR3 operator- (const FVECTOR3 &f) const
-		{
-			return FVECTOR3(x - f.x, y - f.y, z - f.z);
-		}
-
-		float x, y, z;
-	} FVECTOR3;
-
-
-	/**
-	* \brief 32-bit floating point 4D vector type.
-	* \note This structure is compatible with the D3DXVECTOR4 type.
-	*/
-#pragma pack(push, 1)
-	typedef union FVECTOR4 
-	{
-		DWORD dword_abgr() const
-		{
-			DWORD dr = DWORD(max(0, r) * 255.0f + 0.5f);
-			DWORD dg = DWORD(max(0, g) * 255.0f + 0.5f);
-			DWORD db = DWORD(max(0, b) * 255.0f + 0.5f);
-			DWORD da = DWORD(max(0, a) * 255.0f + 0.5f);
-			if (dr > 0xFF) dr = 0xFF;
-			if (dg > 0xFF) dg = 0xFF;
-			if (db > 0xFF) db = 0xFF;
-			if (da > 0xFF) da = 0xFF;		
-			return (da << 24) | (db << 16) | (dg << 8) | dr;
-		}
-
-		DWORD dword_argb() const
-		{
-			DWORD dr = DWORD(max(0, r) * 255.0f + 0.5f);
-			DWORD dg = DWORD(max(0, g) * 255.0f + 0.5f);
-			DWORD db = DWORD(max(0, b) * 255.0f + 0.5f);
-			DWORD da = DWORD(max(0, a) * 255.0f + 0.5f);
-			if (dr > 0xFF) dr = 0xFF;
-			if (dg > 0xFF) dg = 0xFF;
-			if (db > 0xFF) db = 0xFF;
-			if (da > 0xFF) da = 0xFF;
-			return (da << 24) | (dr << 16) | (dg << 8) | db;
-		}
-
-		FVECTOR4()
-		{
-			r = g = b = a = 0.0f;
-		}
-
-		FVECTOR4(float q)
-		{
-			x = y = z = w = q;
-		}
-
-		FVECTOR4(const COLOUR4 &c)
-		{
-			r = c.r;
-			g = c.g;
-			b = c.b;
-			a = c.a;
-		}
-
-		FVECTOR4(DWORD abgr)
-		{
-			DWORD dr = (abgr & 0xFF); abgr >>= 8;
-			DWORD dg = (abgr & 0xFF); abgr >>= 8;
-			DWORD db = (abgr & 0xFF); abgr >>= 8;
-			DWORD da = (abgr & 0xFF);
-			//if (da == 0) da = 255;
-			float q = 3.92156862e-3f;
-			r = float(dr) * q;
-			g = float(dg) * q;
-			b = float(db) * q;
-			a = float(da) * q;
-		}
-
-		FVECTOR4(const VECTOR4 &v)
-		{
-			x = float(v.x);
-			y = float(v.y);
-			z = float(v.z);
-			w = float(v.w);
-		}
-
-		FVECTOR4(const VECTOR3 &v, float _w)
-		{
-			x = float(v.x);
-			y = float(v.y);
-			z = float(v.z);
-			w = _w;
-		}
-
-		FVECTOR4(const FVECTOR3 &v, float _w)
-		{
-			rgb = v;
-			w = _w;
-		}
-
-		FVECTOR4(float _x, float _y, float _z, float _w)
-		{
-			x = float(_x);
-			y = float(_y);
-			z = float(_z);
-			w = float(_w);
-		}
-
-		FVECTOR4(int _x, int _y, int _z, int _w)
-		{
-			x = float(_x);
-			y = float(_y);
-			z = float(_z);
-			w = float(_w);
-		}
-
-		FVECTOR4(double _x, double _y, double _z, double _w)
-		{
-			x = float(_x);
-			y = float(_y);
-			z = float(_z);
-			w = float(_w);
-		}
-
-
-		inline FVECTOR4 operator* (float f) const
-		{
-			return FVECTOR4( x * f, y * f, z * f, w * f);
-		}
-
-		inline FVECTOR4& operator*= (float f)
-		{
-			x *= f; y *= f; z *= f; w *= f;
-			return *this;
-		}
-
-		inline FVECTOR4& operator/= (float f)
-		{
-			// return *this *= (1.0f / f); // nicer?
-			f = 1.0f / f;
-			x *= f; y *= f; z *= f; w *= f;
-			return *this;
-		}
-
-		inline FVECTOR4& operator+= (float f)
-		{
-			x += f; y += f; z += f; w += f;
-			return *this;
-		}
-
-		inline FVECTOR4& operator-= (float f)
-		{
-			x -= f; y -= f; z -= f; w -= f;
-			return *this;
-		}
-
-		inline FVECTOR4 operator/ (float f) const
-		{
-			f = 1.0f / f;
-			return FVECTOR4(x * f, y * f, z * f, w * f);
-		}
-		
-		inline FVECTOR4 operator+ (float f) const
-		{
-			return FVECTOR4(x + f, y + f, z + f, w + f);
-		}
-
-		inline FVECTOR4 operator- (float f) const
-		{
-			return FVECTOR4(x - f, y - f, z - f, w - f);
-		}
-
-		inline FVECTOR4 operator+ (const FVECTOR4 &f) const
-		{
-			return FVECTOR4(x + f.x, y + f.y, z + f.z, w + f.w);
-		}
-
-		inline FVECTOR4 operator- (const FVECTOR4 &f) const
-		{
-			return FVECTOR4(x - f.x, y - f.y, z - f.z, w - f.w);
-		}
-
-		float data[4];
-		struct { float x, y, z, w; };
-		struct { float r, g, b, a; };
-		FVECTOR3 xyz;     //  , w; };
-		FVECTOR3 rgb;    //   , a; };
-	} FVECTOR4;
-#pragma pack(pop)
-
-
-	typedef union DRECT
-	{
-		DRECT()
-		{
-			left = right = top = bottom = 0.0;
-		}
-
-		DRECT(double l, double t, double r, double b)
-		{
-			left = l; top = t; right = r; bottom = b;
-		}
-
-		DRECT(float l, float t, float r, float b)
-		{
-			left = double(l); top = double(t); right = double(r); bottom = double(b);
-		}
-
-		DRECT(const DRECT &x)
-		{
-			left = x.left; 
-			top = x.top; 
-			right = x.right; 
-			bottom = x.bottom;
-		}
-
-		VECTOR4 vec;
-
-		struct {
-			double left, top, right, bottom;
-		};
-
-	} DRECT;
-
-	/**
-	* \brief Float-valued 4x4 matrix.
-	* \note This structure is compatible with the D3DXMATRIX.
-	*/
-	typedef union FMATRIX4 {
-		FMATRIX4() {}
-
-		FMATRIX4(const float *pSrc) {
-			for (int i = 0; i < 16; i++) data[i] = pSrc[i];
-		}
-
-		void Zero()
-		{
-			for (int i = 0; i < 16; i++) data[i] = 0.0;
-		}
-
-		void Ident() 
-		{
-			for (int i = 0; i < 16; i++) data[i] = 0.0;
-			m11 = m22 = m33 = m44 = 1.0f;
-		}
-
-		float data[16];
-		struct { FVECTOR4 _x, _y, _z, _p; };
-		struct { float m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34, m41, m42, m43, m44; };
-	} FMATRIX4;
-
-
-	/**
-	* \brief Vector Matrix multiplication
-	*/
-	inline FVECTOR4 mul(const FVECTOR4 &V, const FMATRIX4 &M)
-	{
-		float x = V.x*M.m11 + V.y*M.m21 + V.z*M.m31 + V.w*M.m41;
-		float y = V.x*M.m12 + V.y*M.m22 + V.z*M.m32 + V.w*M.m42;
-		float z = V.x*M.m13 + V.y*M.m23 + V.z*M.m33 + V.w*M.m43;
-		float w = V.x*M.m14 + V.y*M.m24 + V.z*M.m34 + V.w*M.m44;
-		return FVECTOR4(x, y, z, w);
-	}
-
-
-	/**
-	* \brief Transform a position by matrix
-	*/
-	inline FVECTOR3 TransformCoord(const FVECTOR3 &V, const FMATRIX4 &M)
-	{
-		float x = V.x*M.m11 + V.y*M.m21 + V.z*M.m31 + M.m41;
-		float y = V.x*M.m12 + V.y*M.m22 + V.z*M.m32 + M.m42;
-		float z = V.x*M.m13 + V.y*M.m23 + V.z*M.m33 + M.m43;
-		float w = V.x*M.m14 + V.y*M.m24 + V.z*M.m34 + M.m44;
-		w = 1.0f / w;
-		return FVECTOR3(x*w, y*w, z*w);
-	}
-
-
-	/**
-	* \brief Transform a normal or direction by matrix
-	*/
-	inline FVECTOR3 TransformNormal(const FVECTOR3 &V, const FMATRIX4 &M)
-	{
-		float x = V.x*M.m11 + V.y*M.m21 + V.z*M.m31;
-		float y = V.x*M.m12 + V.y*M.m22 + V.z*M.m32;
-		float z = V.x*M.m13 + V.y*M.m23 + V.z*M.m33;
-		return FVECTOR3(x, y, z);
-	}
-
-
-	inline FVECTOR2 unit(const FVECTOR2 &v)
-	{
-		float f = 1.0f / sqrt(v.x*v.x + v.y*v.y);
-		return FVECTOR2(v.x*f, v.y*f);
-	}
-
-	inline FVECTOR3 unit(const FVECTOR3 &v)
-	{
-		float f = 1.0f / sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
-		return FVECTOR3(v.x*f, v.y*f, v.z*f);
-	}
-
-	inline float dot(const FVECTOR2 &v, const FVECTOR2 &w)
-	{
-		return v.x*w.x + v.y*w.y;
-	}
-
-	inline float dot(const FVECTOR3 &v, const FVECTOR3 &w)
-	{
-		return v.x*w.x + v.y*w.y + v.z*w.z;
-	}
-
-	inline float dot(const FVECTOR4 &v, const FVECTOR4 &w)
-	{
-		return v.x*w.x + v.y*w.y + v.z*w.z + v.w*w.w;
-	}
-
-	inline float length(const FVECTOR2 &v)
-	{
-		return sqrt(v.x*v.x + v.y*v.y);
-	}
-
-	inline float length(const FVECTOR3 &v)
-	{
-		return sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
-	}
-
-	inline FVECTOR3 cross(const FVECTOR3 &a, const FVECTOR3 &b)
-	{
-		return FVECTOR3(a.y*b.z - a.z*b.y, a.z*b.x - a.x*b.z, a.x*b.y - a.y*b.x);
-	}
-
-	inline float saturate(float x)
-	{
-		return min(1, max(0, x));
-	}
-
-	inline FVECTOR3 saturate(FVECTOR3 &v)
-	{
-		return FVECTOR3(saturate(v.x), saturate(v.y), saturate(v.z));
-	}
-
-	inline FVECTOR4 saturate(FVECTOR4 &v)
-	{
-		return FVECTOR4(saturate(v.x), saturate(v.y), saturate(v.z), saturate(v.w));
-	}
-}
-
-
 
 
 // ===========================================================================
@@ -983,7 +460,6 @@ public:
 	* \return A Handle to a rendering surface (i.e. backbuffer)
 	*/
 	virtual SURFHANDLE	GetRenderTarget(HSWAP hSwap);
-	virtual HSURFNATIVE GetRenderTargetNative(HSWAP hSwap);
 
 	/**
 	* \brief Release a swap object after it's no longer needed.
@@ -1016,6 +492,13 @@ public:
 	virtual void		CustomCameraOnOff(CAMERAHANDLE hCam, bool bOn);
 
 	/**
+	* \brief Setup a custom camera overlay drawing callback
+	* \param hCam camera handle to toggle
+	* \param clbk pointer to a function to be called after each frame.
+	*/
+	virtual void		CustomCameraOverlay(CAMERAHANDLE hCam, __gcRenderProc clbk, void* pUser);
+
+	/**
 	* \brief Create a new custom camera that can be used to render views into a surfaces and textures
 	* \param hCam camera handle to modify an existing camera or, NULL
 	* \param hVessel handle to a vessel where the camera is attached to.
@@ -1040,40 +523,6 @@ public:
 	/// \name Sketchpad related functions
 	// ===========================================================================
 	//@{
-	/**
-	* \brief Get the sketchpad version
-	* \param pSkp handle to a sketchpad interface.
-	* \return Currently returns 2 or (1 in some very special cases). 
-	*/
-	virtual int			SketchpadVersion(Sketchpad *pSkp);
-
-	/**
-	* \brief Get a Sketchpad for a native DirectX 9 surface
-	* \param hSrf handle to a surface
-	* \param hDep handle to optional depth stencil surface
-	* \return a pointer to a new sketchpad interface or NULL if an error occurs.
-	*/
-	virtual Sketchpad*	GetSketchpadNative(HSURFNATIVE hSrf, HSURFNATIVE hDep = NULL);
-
-	/**
-	* \brief Release a native sketchpad interface acquired by GetSketchpadNative()
-	* \param pSkp handle to a sketchpad interface to release.
-	*/
-	virtual void		ReleaseSketchpadNative(Sketchpad *pSkp);
-
-	/**
-	* \brief Load a mesh from a harddrive to be used with Sketchpad2::SketchMesh
-	* \param name Name of the mesh file without ".msh" identifier.
-	* \sa gcDeleteSketchMesh
-	* \note SKETCHMESH handle isn't compatible with MESHHANDLE nor DEVMESHHANDLE.
-	*/
-	virtual SKETCHMESH	LoadSketchMesh(const char *name);
-
-	/**
-	* \brief Delete a mesh previously loaded with gcLoadSketchMesh
-	* \sa gcLoadSketchMesh
-	*/
-	virtual void		DeleteSketchMesh(SKETCHMESH hMesh);
 
 	/**
 	* \brief Create or Update a polyline composed form piecewise straight segments.
@@ -1140,17 +589,6 @@ public:
 	*/
 	virtual bool		RegisterRenderProc(__gcRenderProc proc, DWORD id, void *pParam);
 
-	/**
-	* \brief Create a Font
-	* \param height Font height
-	* \param face Name of the font
-	* \param width Width of the font (0 for default aspect ration)
-	* \param weight Font thikness (400 for default weight)
-	* \param style A combination of \see gcFont flags (0 for default)
-	* \param spacing A spacing between charters in a string (0.0f for default)
-	* \return A pointer to a created or pre-existing font or NULL in a case of an error.
-	*/
-	virtual oapi::Font *CreateSketchpadFont(int height, char *face, int width = 0, int weight = 400, int gcFontStyle = 0, float spacing = 0.0f);
 	//@}
 
 
@@ -1161,17 +599,7 @@ public:
 	/// \name Mesh interface functions
 	// ===========================================================================
 	//@{
-	/**
-	* \brief This function will register a custom render callback function
-	* \param hMesh Handle to a devmesh containing the material
-	* \param idx Material index
-	* \param prop material property identifier (\ref MeshMaterialFlags)
-	* \param value a pointer to COLOUR4 structure containing/receiving the data, or \e NULL to reset a default value or to unspecify a property.
-	* \param bSet \e true to set material value, \e false to get a meterial value
-	* \return -4 = Invalid handle \n -3 = Unknown property flag \n -2 = Property not specified cannot get it \n -1 = Index out of range \n 0 = Success
-	*/
-	virtual int			MeshMaterial(DEVMESHHANDLE hMesh, DWORD idx, int prop, FVECTOR4 *value, bool bSet);
-
+	
 	/**
 	* \brief A Function to get a mesh transformation/animation matrix.
 	* \param matrix_id Id of the matrix to get. One of gcMatrix::xxx datatypes.
@@ -1181,7 +609,7 @@ public:
 	* \param pMat A pointer to FMATRIX4 struct for receiving the data.
 	* \return 0 = on Success, or error code.
 	*/
-	virtual int			GetMatrix(int matrix_id, OBJHANDLE hVessel, DWORD mesh, DWORD group, oapi::FMATRIX4 *pMat);
+	virtual int				GetMatrix(int matrix_id, OBJHANDLE hVessel, DWORD mesh, DWORD group, oapi::FMATRIX4 *pMat);
 
 
 	/**
@@ -1193,7 +621,7 @@ public:
 	* \param pMat A pointer to FMATRIX4 containing the data to set.
 	* \return 0 = on Success, or error code.
 	*/
-	virtual int			SetMatrix(int matrix_id, OBJHANDLE hVessel, DWORD mesh, DWORD group, const oapi::FMATRIX4 *pMat);
+	virtual int				SetMatrix(int matrix_id, OBJHANDLE hVessel, DWORD mesh, DWORD group, const oapi::FMATRIX4 *pMat);
 	//@}
 
 
@@ -1234,30 +662,6 @@ public:
 	*/
 	virtual COLOUR4			Colour4(DWORD dwABGR);
 
-
-	/**
-	* \brief Get Surface Attributes (e.g. OAPISURFACE_TEXTURE)
-	* \param hSurf handle to a surface
-	* \param bCreation if true return creation time attributes, if false return current attributes
-	* \return Surface attributes
-	*/
-	virtual DWORD			GetSurfaceAttribs(SURFHANDLE hSurf, bool bCreation = false);
-
-	/**
-	* \brief Convert an existing surface to an other type.
-	* \param hSurf handle to a surface
-	* \param attrib new attributes
-	*/
-	virtual void			ConvertSurface(SURFHANDLE hSurf, DWORD attrib);
-
-	/**
-	* \brief Load a texture into a specific type of a surface
-	* \param fname name of a texture to be loaded.
-	* \param flags surface attributes (see: OAPISURFACE_x flags)
-	* \return surface handle or NULL in a case of an error
-	*/
-	virtual SURFHANDLE		LoadSurface(const char *fname, DWORD flags);
-
 	/**
 	* \brief Load a bitmap from file (*.bmp *.png *.jpg *.gif)
 	* \param fname name of the file to be loaded.
@@ -1293,8 +697,8 @@ public:
 	// ===========================================================================
 	//@{
 	virtual HPLANETMGR		GetPlanetManager(OBJHANDLE hPlanet);
-	virtual HSURFNATIVE		SetTileOverlay(HTILE hTile, const HSURFNATIVE hOverlay);
-	virtual HOVERLAY		AddGlobalOverlay(HPLANETMGR hMgr, VECTOR4 mmll, const HSURFNATIVE hOverlay = NULL, HOVERLAY hOld = NULL);
+	virtual SURFHANDLE		SetTileOverlay(HTILE hTile, const SURFHANDLE hOverlay);
+	virtual HOVERLAY		AddGlobalOverlay(HPLANETMGR hMgr, VECTOR4 mmll, const SURFHANDLE hOverlay = NULL, HOVERLAY hOld = NULL);
 
 	/**
 	* \brief Find a tile from a specified coordinates. Limited to a highest allocated level found from memory. 
@@ -1319,7 +723,7 @@ public:
 	* \note WARNING: Tile returned by this function can become invalid without notice.
 	*/
 	virtual bool			HasTileData(HPLANETMGR hMgr, int iLng, int iLat, int level, int flags);
-	virtual HSURFNATIVE		SeekTileTexture(HPLANETMGR hMgr, int iLng, int iLat, int level, int flags = 3, void *reserved = NULL);
+	virtual SURFHANDLE		SeekTileTexture(HPLANETMGR hMgr, int iLng, int iLat, int level, int flags = 3, void *reserved = NULL);
 	virtual void *			SeekTileElevation(HPLANETMGR hMgr, int iLng, int iLat, int level, int flags, ElevInfo *pEI);
 	
 
@@ -1344,68 +748,10 @@ public:
 
 
 
-
-
-
 	// ===========================================================================
 	/// \name Native Object Interface
 	// ===========================================================================
 	//@{
-
-	/**
-	* \brief Load a file into native DirectX. Valid formats are (*.dds, *.jpg, *.bmp, *.png)
-	* \param file filename.
-	* \param flags a combination of OAPISURFACE_ flags.
-	* \return NULL in a case of failure.
-	*/
-	virtual HSURFNATIVE		LoadSurfaceNative(const char *file, DWORD flags);
-
-	/**
-	* \brief Create a native DirectX 9 Surface
-	* \param width surface width in pixels 
-	* \param height surface height in pixels
-	* \param flags a combination of OAPISURFACE_ flags.
-	* \return Surface handle or NULL in a case of a failure.
-	*/
-	virtual HSURFNATIVE		CreateSurfaceNative(int width, int height, DWORD flags);
-
-	/**
-	* \brief Get a handle to a specific mipmap sub-level
-	* \param hSrf Handle to a texture containing mipmaps
-	* \param level Level of the mipmap to acquire. (level >= 1) (0 = "hSrf" it self with surface interface)
-	* \return Surface handle or NULL in a case of a failure. Must be released with ReleaseSurface() after nolonger accessed.
-	*/
-	virtual HSURFNATIVE		GetMipSublevel(HSURFNATIVE hSrf, int level);
-
-	virtual void			ReleaseSurface(HSURFNATIVE hSrf);
-	virtual bool			GetSurfaceSpecs(HSURFNATIVE hSrf, SurfaceSpecs *pOut);
-
-	/**
-	* \brief Save a native DirectX surface to a file (*.dds, *.jpg, *.bmp, *.png)  
-	* \param file filename.
-	* \param hSrf handle to a surface to same.
-	* \return false in a case of failure.
-	*/
-	virtual bool			SaveSurfaceNative(const char *file, HSURFNATIVE hSrf);
-
-	/**
-	* \brief Realtime Mipmap auto-generation from the top/main level.
-	* \param hSurface handle to a surface
-	* \return false if an error occured, true otherwise.
-	* \note Surface must be created with (OAPISURFACE_TEXTURE | OAPISURFACE_RENDERTARGET | OAPISURFACE_MIPMAPS)
-	* \note Exact attribute requirements/conflicts are unknown.
-	*/
-	virtual bool			GenerateMipMaps(HSURFNATIVE hSurface);
-
-	/**
-	* \brief On the fly texture compression into a DXT format. Input remains uncanged.
-	* \param hSurface handle to a surface to compress
-	* \param flags combination of OAPISURFACE_PF_DXT1, OAPISURFACE_PF_DXT3, OAPISURFACE_PF_DXT5, OAPISURFACE_MIPMAPS, OAPISURFACE_SYSMEM
-	* \return Handle to a compressed texture, user must release this.
-	* \note Compression is slow, separate thread recommended for realtime compression.
-	*/
-	virtual HSURFNATIVE		CompressSurface(HSURFNATIVE hSurface, DWORD flags);
-
 	/**
 	* \brief Get device specific mesh from Orbiter mesh template
 	* \param hMesh handle to a mesh acquired from oapiLoadMeshGlobal()
@@ -1451,6 +797,8 @@ public:
 	virtual void			RenderLines(const FVECTOR3 *pVtx, const WORD *pIdx, int nVtx, int nIdx, const FMATRIX4 *pWorld, DWORD color);
 	//@}
 
+	virtual bool			StretchRectInScene(SURFHANDLE tgt, SURFHANDLE src, LPRECT tr = NULL, LPRECT sr = NULL);
+	virtual bool			ClearSurfaceInScene(SURFHANDLE tgt, DWORD color, LPRECT tr = NULL);
 
 
 	/**

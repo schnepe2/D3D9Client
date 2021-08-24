@@ -9,7 +9,6 @@
 #include <set>
 #include "VVessel.h"
 #include "MeshMgr.h"
-#include "Texture.h"
 #include "AABBUtil.h"
 #include "D3D9Surface.h"
 #include "D3D9Catalog.h"
@@ -117,8 +116,8 @@ vVessel::~vVessel ()
 void vVessel::GlobalInit(D3D9Client *gc)
 {
 	_TRACE;
-	gc->GetTexMgr()->LoadTexture("Reentry.dds", &defreentrytex, 0);
-	gc->GetTexMgr()->LoadTexture("Exhaust.dds", &defexhausttex, 0);
+	defreentrytex = SURFACE(gc->clbkLoadTexture("Reentry.dds", 0));
+	defexhausttex = SURFACE(gc->clbkLoadTexture("Exhaust.dds", 0));
 }
 
 
@@ -126,15 +125,14 @@ void vVessel::GlobalInit(D3D9Client *gc)
 //
 void vVessel::GlobalExit ()
 {
-	SAFE_DELETE(defexhausttex);
-	SAFE_DELETE(defreentrytex);
-	SAFE_DELETE(tHUD);
+	DELETE_SURFACE(defexhausttex);
+	DELETE_SURFACE(defreentrytex);
 }
 
 
 // ============================================================================================
 //
-void vVessel::clbkEvent(DWORD evnt, LONG_PTR _context)
+void vVessel::clbkEvent(DWORD evnt, DWORD_PTR _context)
 {
 	UINT context = (UINT)_context;
 
@@ -1254,7 +1252,7 @@ bool vVessel::RenderENVMap(LPDIRECT3DDEVICE9 pDev, DWORD cnt, DWORD flags)
 
 	for (DWORD i=0;i<cnt;i++) {
 
-		assert(SUCCEEDED(pEnv[ENVMAP_MAIN]->GetCubeMapSurface(D3DCUBEMAP_FACES(eFace), 0, &pSrf)));
+		HR(pEnv[ENVMAP_MAIN]->GetCubeMapSurface(D3DCUBEMAP_FACES(eFace), 0, &pSrf));
 	
 		gc->AlterRenderTarget(pSrf, pEnvDS);
 
@@ -1372,7 +1370,7 @@ bool vVessel::ProbeIrradiance(LPDIRECT3DDEVICE9 pDev, DWORD cnt, DWORD flags)
 	
 	for (DWORD i = 0; i<cnt; i++) {
 
-		assert(SUCCEEDED(pIrdEnv->GetCubeMapSurface(D3DCUBEMAP_FACES(iFace), 0, &pSrf)));
+		HR(pIrdEnv->GetCubeMapSurface(D3DCUBEMAP_FACES(iFace), 0, &pSrf));
 
 		gc->AlterRenderTarget(pSrf, pIrDS);
 
@@ -1985,9 +1983,8 @@ void vVessel::ReloadTextures()
 // ===========================================================================================
 //
 
-D3D9ClientSurface * vVessel::tHUD = 0;
-D3D9ClientSurface * vVessel::defreentrytex = 0;
-D3D9ClientSurface * vVessel::defexhausttex = 0;
+SurfNative * vVessel::defreentrytex = 0;
+SurfNative * vVessel::defexhausttex = 0;
 
 
 // ==============================================================
@@ -2034,7 +2031,7 @@ static inline const int clip(int v, int vMin, int vMax)
 
 inline const char *value_string (char *buf, size_t buf_size, double val)
 {
-	static const char unit_prefixes[] = { 'µ', 'm', '\0', 'k' , 'M' , 'G' , 'T' , 'P' };
+	static const char unit_prefixes[] = { 'Âµ', 'm', '\0', 'k' , 'M' , 'G' , 'T' , 'P' };
 
 	int index = (int) (log10(val)) / 3;
 	val /= pow(10.0, index*3);

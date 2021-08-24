@@ -27,7 +27,6 @@ set(SourceFiles
 	D3D9TextMgr.cpp
 	D3D9Util.cpp
 	DebugControls.cpp
-	FileParser.cpp
 	gcCore.cpp
 	GDIPad.cpp
 	HazeMgr.cpp
@@ -46,7 +45,6 @@ set(SourceFiles
 	Spherepatch.cpp
 	SurfMgr.cpp
 	Surfmgr2.cpp
-	Texture.cpp
 	TileLabel.cpp
 	TileMgr.cpp
 	Tilemgr2.cpp
@@ -79,7 +77,6 @@ set(IncludeFiles
 	D3D9TextMgr.h
 	D3D9Util.h
 	DebugControls.h
-	FileParser.h
 	GDIPad.h
 	HazeMgr.h
 	IProcess.h
@@ -99,7 +96,6 @@ set(IncludeFiles
 	Spherepatch.h
 	SurfMgr.h
 	Surfmgr2.h
-	Texture.h
 	TileLabel.h
 	TileMgr.h
 	Tilemgr2.h
@@ -139,6 +135,10 @@ set(ShaderFiles
 
 source_group(Shaders FILES ${ShaderFiles})
 
+set_property(SOURCE ${ShaderFiles}
+    PROPERTY VS_SETTINGS "ExcludedFromBuild=true"
+)
+
 add_library(D3D9Client MODULE
 	${SourceFiles}
 	${IncludeFiles}
@@ -148,12 +148,12 @@ add_library(D3D9Client MODULE
 
 target_include_directories(D3D9Client PUBLIC
 	${ORBITER_SOURCE_SDK_INCLUDE_DIR}
-	${DXSDK_DIR}Include
+	${DXSDK_DIR}/Include
 )
 
 target_link_directories(D3D9Client PUBLIC
 	${ORBITER_SOURCE_SDK_LIB_DIR}
-	${DXSDK_DIR}Lib/x64
+	${DXSDK_LIB_DIR}
 )
 
 target_link_libraries(D3D9Client

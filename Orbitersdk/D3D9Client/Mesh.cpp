@@ -201,7 +201,7 @@ D3D9Mesh::D3D9Mesh(const char *fname) : D3D9Effect()
 		oapiDeleteMesh(hMesh);
 	}
 
-	MeshCatalog->Add(this);
+	MeshCatalog.insert(this);
 	pBuf->Map(pDev);
 }
 
@@ -212,7 +212,7 @@ D3D9Mesh::D3D9Mesh(MESHHANDLE hMesh, bool asTemplate, D3DXVECTOR3 *reorig, float
 	Null(meshName);
 	LoadMeshFromHandle(hMesh, reorig, scale);
 	bIsTemplate = asTemplate;
-	MeshCatalog->Add(this);
+	MeshCatalog.insert(this);
 	pBuf->Map(pDev);
 }
 
@@ -235,7 +235,7 @@ D3D9Mesh::D3D9Mesh(DWORD groups, const MESHGROUPEX **hGroup, const SURFHANDLE *h
 
 	nMtrl = 0;
 	nTex = nGrp+1;
-	Tex = new LPD3D9CLIENTSURFACE[nTex];
+	Tex = new lpSurfNative[nTex];
 	Tex[0] = 0; // 'no texture'
 	for (DWORD i=1;i<nTex;i++) Tex[i] = SURFACE(hSurf[i-1]);
 
@@ -249,7 +249,7 @@ D3D9Mesh::D3D9Mesh(DWORD groups, const MESHGROUPEX **hGroup, const SURFHANDLE *h
 
 	D3DXMatrixIdentity(&mTransform);
 	D3DXMatrixIdentity(&mTransformInv);
-	MeshCatalog->Add(this);
+	MeshCatalog.insert(this);
 
 	UpdateBoundingBox();
 	CheckMeshStatus();
@@ -260,7 +260,7 @@ D3D9Mesh::D3D9Mesh(DWORD groups, const MESHGROUPEX **hGroup, const SURFHANDLE *h
 
 // ===========================================================================================
 //
-D3D9Mesh::D3D9Mesh(const MESHGROUPEX *pGroup, const MATERIAL *pMat, D3D9ClientSurface *pTex) : D3D9Effect()
+D3D9Mesh::D3D9Mesh(const MESHGROUPEX *pGroup, const MATERIAL *pMat, SurfNative *pTex) : D3D9Effect()
 {
 	Null();
 
@@ -268,7 +268,7 @@ D3D9Mesh::D3D9Mesh(const MESHGROUPEX *pGroup, const MATERIAL *pMat, D3D9ClientSu
 	nGrp   = 1;
 	Grp    = new GROUPREC[nGrp]; memset(Grp, 0, sizeof(GROUPREC) * nGrp);
 	nTex   = 2;
-	Tex	   = new LPD3D9CLIENTSURFACE[nTex];
+	Tex	   = new lpSurfNative[nTex];
 	Tex[0] = 0; // 'no texture'
 	Tex[1] = pTex;
 	nMtrl  = 1;
@@ -284,7 +284,7 @@ D3D9Mesh::D3D9Mesh(const MESHGROUPEX *pGroup, const MATERIAL *pMat, D3D9ClientSu
 
 	D3DXMatrixIdentity(&mTransform);
 	D3DXMatrixIdentity(&mTransformInv);
-	MeshCatalog->Add(this);
+	MeshCatalog.insert(this);
 
 	UpdateBoundingBox();
 	CheckMeshStatus();
@@ -323,7 +323,7 @@ D3D9Mesh::D3D9Mesh(MESHHANDLE hMesh, const D3D9Mesh &hTemp)
 
 	// -----------------------------------------------------------------------
 	nTex = oapiMeshTextureCount(hMesh) + 1;	assert(nTex == hTemp.nTex);
-	Tex = new LPD3D9CLIENTSURFACE[nTex];
+	Tex = new lpSurfNative[nTex];
 	Tex[0] = 0; // 'no texture'
 	for (DWORD i = 1; i<nTex; i++) Tex[i] = SURFACE(oapiGetTextureHandle(hMesh, i));
 
@@ -337,7 +337,7 @@ D3D9Mesh::D3D9Mesh(MESHHANDLE hMesh, const D3D9Mesh &hTemp)
 	D3DXMatrixIdentity(&mTransform);
 	D3DXMatrixIdentity(&mTransformInv);
 
-	MeshCatalog->Add(this);
+	MeshCatalog.insert(this);
 
 	UpdateBoundingBox();
 	CheckMeshStatus();
@@ -352,8 +352,8 @@ D3D9Mesh::~D3D9Mesh()
 {
 	_TRACE;
 
-	if (MeshCatalog->Remove(this)) LogAlw("Mesh %s Removed from catalog", _PTR(this));
-	else 						   LogErr("Mesh %s wasn't in meshcatalog", _PTR(this));
+	if (MeshCatalog.erase(this)) LogAlw("Mesh %s Removed from catalog", _PTR(this));
+	else 						 LogErr("Mesh %s wasn't in meshcatalog", _PTR(this));
 
 	Release();
 
@@ -413,7 +413,7 @@ void D3D9Mesh::ReLoadMeshFromHandle(MESHHANDLE hMesh)
 
 	// -----------------------------------------------------------------------
 	nTex = oapiMeshTextureCount(hMesh) + 1;
-	Tex = new LPD3D9CLIENTSURFACE[nTex];
+	Tex = new lpSurfNative[nTex];
 	Tex[0] = 0; // 'no texture'
 	for (DWORD i = 1; i<nTex; i++) Tex[i] = SURFACE(oapiGetTextureHandle(hMesh, i));
 	// -----------------------------------------------------------------------
@@ -456,7 +456,7 @@ void D3D9Mesh::LoadMeshFromHandle(MESHHANDLE hMesh, D3DXVECTOR3 *reorig, float *
 
 	// -----------------------------------------------------------------------
 	nTex = oapiMeshTextureCount(hMesh) + 1;
-	Tex = new LPD3D9CLIENTSURFACE[nTex];
+	Tex = new lpSurfNative[nTex];
 	Tex[0] = 0; // 'no texture'
 	for (DWORD i = 1; i<nTex; i++) Tex[i] = SURFACE(oapiGetTextureHandle(hMesh, i));
 
@@ -482,7 +482,7 @@ void D3D9Mesh::LoadMeshFromHandle(MESHHANDLE hMesh, D3DXVECTOR3 *reorig, float *
 //
 void D3D9Mesh::ReloadTextures()
 {
-	for (UINT i = 0; i < nTex; i++) if (Tex[i]) Tex[i]->Reload();
+	for (UINT i = 0; i < nTex; i++) if (Tex[i]) SURFACE(Tex[i])->Reload();
 }
 
 // ===========================================================================================
@@ -897,7 +897,7 @@ void D3D9Mesh::SetMFDScreenId(DWORD idx, WORD id)
 
 // ===========================================================================================
 //
-bool D3D9Mesh::SetTexture(DWORD texidx, LPD3D9CLIENTSURFACE tex)
+bool D3D9Mesh::SetTexture(DWORD texidx, SURFHANDLE tex)
 {
 	_TRACE;
 	if (!IsOK()) return false;
@@ -905,7 +905,7 @@ bool D3D9Mesh::SetTexture(DWORD texidx, LPD3D9CLIENTSURFACE tex)
 		LogErr("D3D9Mesh::SetTexture(%u, %s) index out of range",texidx, _PTR(tex));
 		return false;
 	}
-	Tex[texidx] = tex;
+	Tex[texidx] = (lpSurfNative)tex;
 	LogBlu("D3D9Mesh(%s)::SetTexture(%u, %s) (%s)", _PTR(this), texidx, _PTR(tex), SURFACE(tex)->GetName());
 	CheckMeshStatus();
 	return true;
@@ -1036,173 +1036,188 @@ void D3D9Mesh::SetMaterial(const D3D9MatExt *pMat, DWORD idx, bool bStat)
 	if (bStat) CheckMeshStatus();
 }
 
+
 // ===========================================================================================
-// -1 = idx out of range
-// -2 = material property not defined cannot get it
-// -3 = invalid marerial id (mid)
-// -4 = invalid input parameters
+//0 = success, 1=no graphics engine attached,
+//2 = graphics engine does not support operation, 3 = invalid mesh handle,
+//4 = material index out of range, 5 = material property not supported by shader used by the mesh.
 //
-int D3D9Mesh::Material(DWORD idx, int mid, FVECTOR4 *value, bool bSet)
+int D3D9Mesh::SetMaterialEx(DWORD idx, MatProp mid, const FVECTOR4* value)
 {
 
-	if (idx >= nMtrl) return -1;
+	if (idx >= nMtrl) return 4;
 
 	// SET ---------------------------------------------------------------
-	if (bSet && value) {
+	if (value) {
 		switch (mid) {
-		case MESHM_DIFFUSE:
+		case MatProp::Diffuse:
 			Mtrl[idx].Diffuse = *((D3DXVECTOR4*)value);
 			Mtrl[idx].ModFlags |= D3D9MATEX_DIFFUSE;
 			bMtrlModidied = true;
 			return 0;
-		case MESHM_AMBIENT:
+		case MatProp::Ambient:
 			Mtrl[idx].Ambient = *((D3DXVECTOR3*)value);
 			Mtrl[idx].ModFlags |= D3D9MATEX_AMBIENT;
 			bMtrlModidied = true;
 			return 0;
-		case MESHM_SPECULAR:
+		case MatProp::Specular:
 			Mtrl[idx].Specular = *((D3DXVECTOR4*)value);
 			Mtrl[idx].ModFlags |= D3D9MATEX_SPECULAR;
 			bMtrlModidied = true;
 			return 0;
-		case MESHM_EMISSION:
+		case MatProp::Light:
 			Mtrl[idx].Emissive = *((D3DXVECTOR3*)value);
 			Mtrl[idx].ModFlags |= D3D9MATEX_EMISSIVE;
 			bMtrlModidied = true;
 			return 0;
-		case MESHM_EMISSION2:
+		case MatProp::Emission:
 			Mtrl[idx].Emission2 = *((D3DXVECTOR3*)value);
 			Mtrl[idx].ModFlags |= D3D9MATEX_EMISSION2;
 			bMtrlModidied = true;
 			return 0;
-		case MESHM_REFLECT:
+		case MatProp::Reflect:
 			Mtrl[idx].Reflect = *((D3DXVECTOR3*)value);
 			Mtrl[idx].ModFlags |= D3D9MATEX_REFLECT;
 			bMtrlModidied = true;
 			return 0;
-		case MESHM_ROUGHNESS:
+		case MatProp::Smooth:
 			Mtrl[idx].Roughness = D3DXVECTOR2(value->g, value->r);
 			Mtrl[idx].ModFlags |= D3D9MATEX_ROUGHNESS;
 			bMtrlModidied = true;
 			return 0;
-		case MESHM_FRESNEL:
+		case MatProp::Fresnel:
 			Mtrl[idx].Fresnel = *((D3DXVECTOR3*)value);
 			Mtrl[idx].ModFlags |= D3D9MATEX_FRESNEL;
 			bMtrlModidied = true;
 			return 0;
-		case MESHM_METALNESS:
+		case MatProp::Metal:
 			Mtrl[idx].Metalness = value->r;
 			bMtrlModidied = true;
 			return 0;
-		case MESHM_SPECIALFX:
-			 Mtrl[idx].SpecialFX = *((D3DXVECTOR4*)value);
-			 bMtrlModidied = true;
+		case MatProp::SpecialFX:
+			Mtrl[idx].SpecialFX = *((D3DXVECTOR4*)value);
+			bMtrlModidied = true;
 			return 0;
 		}
-		return -3;
-	}
-
-	// GET ---------------------------------------------------------------
-	if ((!bSet) && value) {
-		switch (mid) {
-		case MESHM_DIFFUSE:
-			*((D3DXVECTOR4*)value) = Mtrl[idx].Diffuse;
-			return 0;
-		case MESHM_AMBIENT:
-			*((D3DXVECTOR3*)value) = Mtrl[idx].Ambient;
-			return 0;
-		case MESHM_SPECULAR:
-			*((D3DXVECTOR4*)value) = Mtrl[idx].Specular;
-			return 0;
-		case MESHM_EMISSION:
-			*((D3DXVECTOR3*)value) = Mtrl[idx].Emissive;
-			return 0;
-		case MESHM_EMISSION2:
-			if ((Mtrl[idx].ModFlags&D3D9MATEX_EMISSION2) == 0) return -2;
-			*((D3DXVECTOR3*)value) = Mtrl[idx].Emission2;
-			return 0;
-		case MESHM_REFLECT:
-			if ((Mtrl[idx].ModFlags&D3D9MATEX_REFLECT) == 0) return -2;
-			*((D3DXVECTOR3*)value) = Mtrl[idx].Reflect;
-			return 0;
-		case MESHM_ROUGHNESS:
-			if ((Mtrl[idx].ModFlags&D3D9MATEX_ROUGHNESS) == 0) return -2;
-			value->g = Mtrl[idx].Roughness.x;
-			value->r = Mtrl[idx].Roughness.y;
-			return 0;
-		case MESHM_FRESNEL:
-			if ((Mtrl[idx].ModFlags&D3D9MATEX_FRESNEL) == 0) return -2;
-			*((D3DXVECTOR3*)value) = Mtrl[idx].Fresnel;
-			return 0;
-		case MESHM_METALNESS:
-			if ((Mtrl[idx].ModFlags&MESHM_METALNESS) == 0) return -2;
-			value->r = Mtrl[idx].Metalness;
-			return 0;
-		case MESHM_SPECIALFX:
-			if ((Mtrl[idx].ModFlags&MESHM_SPECIALFX) == 0) return -2;
-			*((D3DXVECTOR4*)value) = Mtrl[idx].SpecialFX;
-			return 0;
-		}
-		return -3;
+		return 5;
 	}
 
 	// CLEAR -------------------------------------------------------------
-	if (value==NULL) {
+
+	if (value == NULL)
+	{
 		switch (mid) {
-		case MESHM_DIFFUSE:
+		case MatProp::Diffuse:
 			Mtrl[idx].Diffuse = D3DXVECTOR4(1, 1, 1, 1);
 			Mtrl[idx].ModFlags &= (~D3D9MATEX_DIFFUSE);
 			bMtrlModidied = true;
 			return 0;
-		case MESHM_AMBIENT:
+		case MatProp::Ambient:
 			Mtrl[idx].Ambient = D3DXVECTOR3(1, 1, 1);
 			Mtrl[idx].ModFlags &= (~D3D9MATEX_AMBIENT);
 			bMtrlModidied = true;
 			return 0;
-		case MESHM_SPECULAR:
+		case MatProp::Specular:
 			Mtrl[idx].Specular = D3DXVECTOR4(1, 1, 1, 20.0);
 			Mtrl[idx].ModFlags &= (~D3D9MATEX_SPECULAR);
 			bMtrlModidied = true;
 			return 0;
-		case MESHM_EMISSION:
+		case MatProp::Light:
 			Mtrl[idx].Emissive = D3DXVECTOR3(0, 0, 0);
 			Mtrl[idx].ModFlags &= (~D3D9MATEX_EMISSIVE);
 			bMtrlModidied = true;
 			return 0;
-		case MESHM_EMISSION2:
+		case MatProp::Emission:
 			Mtrl[idx].Emission2 = D3DXVECTOR3(1, 1, 1);
 			Mtrl[idx].ModFlags &= (~D3D9MATEX_EMISSION2);
 			bMtrlModidied = true;
 			return 0;
-		case MESHM_REFLECT:
-			Mtrl[idx].Reflect = D3DXVECTOR3(0,0,0);
+		case MatProp::Reflect:
+			Mtrl[idx].Reflect = D3DXVECTOR3(0, 0, 0);
 			Mtrl[idx].ModFlags &= (~D3D9MATEX_REFLECT);
 			bMtrlModidied = true;
 			return 0;
-		case MESHM_ROUGHNESS:
+		case MatProp::Smooth:
 			Mtrl[idx].Roughness = D3DXVECTOR2(0.0f, 1.0f);
 			Mtrl[idx].ModFlags &= (~D3D9MATEX_ROUGHNESS);
 			bMtrlModidied = true;
 			return 0;
-		case MESHM_FRESNEL:
+		case MatProp::Fresnel:
 			Mtrl[idx].Fresnel = D3DXVECTOR3(1, 0, 1024.0f);
 			Mtrl[idx].ModFlags &= (~D3D9MATEX_FRESNEL);
 			bMtrlModidied = true;
 			return 0;
-		case MESHM_METALNESS:
+		case MatProp::Metal:
 			Mtrl[idx].Metalness = 0.0f;
 			Mtrl[idx].ModFlags &= (~D3D9MATEX_METALNESS);
 			bMtrlModidied = true;
 			return 0;
-		case MESHM_SPECIALFX:
+		case MatProp::SpecialFX:
 			Mtrl[idx].SpecialFX = D3DXVECTOR4(0, 0, 0, 0);
 			Mtrl[idx].ModFlags &= (~D3D9MATEX_SPECIALFX);
 			bMtrlModidied = true;
 			return 0;
 		}
-		return -3;
+		return 5;
 	}
-	return -4;
+	return 5;
+}
+
+
+// ===========================================================================================
+//0 = success, 1=no graphics engine attached,
+//2 = graphics engine does not support operation, 3 = invalid mesh handle,
+//4 = material index out of range, 5 = material property not supported by shader used by the mesh.
+//
+int D3D9Mesh::GetMaterialEx(DWORD idx, MatProp mid, FVECTOR4* value)
+{
+	if (idx >= nMtrl) return 4;
+
+	if (value)
+	{
+		switch (mid)
+		{
+		case MatProp::Diffuse:
+			*((D3DXVECTOR4*)value) = Mtrl[idx].Diffuse;
+			return 0;
+		case MatProp::Ambient:
+			*((D3DXVECTOR3*)value) = Mtrl[idx].Ambient;
+			return 0;
+		case MatProp::Specular:
+			*((D3DXVECTOR4*)value) = Mtrl[idx].Specular;
+			return 0;
+		case MatProp::Light:
+			*((D3DXVECTOR3*)value) = Mtrl[idx].Emissive;
+			return 0;
+		case  MatProp::Emission:
+			if ((Mtrl[idx].ModFlags&D3D9MATEX_EMISSION2) == 0) return -2;
+			*((D3DXVECTOR3*)value) = Mtrl[idx].Emission2;
+			return 0;
+		case MatProp::Reflect:
+			if ((Mtrl[idx].ModFlags&D3D9MATEX_REFLECT) == 0) return -2;
+			*((D3DXVECTOR3*)value) = Mtrl[idx].Reflect;
+			return 0;
+		case MatProp::Smooth:
+			if ((Mtrl[idx].ModFlags&D3D9MATEX_ROUGHNESS) == 0) return -2;
+			value->g = Mtrl[idx].Roughness.x;
+			value->r = Mtrl[idx].Roughness.y;
+			return 0;
+		case MatProp::Fresnel:
+			if ((Mtrl[idx].ModFlags&D3D9MATEX_FRESNEL) == 0) return -2;
+			*((D3DXVECTOR3*)value) = Mtrl[idx].Fresnel;
+			return 0;
+		case MatProp::Metal:
+			if ((Mtrl[idx].ModFlags&MESHM_METALNESS) == 0) return -2;
+			value->r = Mtrl[idx].Metalness;
+			return 0;
+		case MatProp::SpecialFX:
+			if ((Mtrl[idx].ModFlags&MESHM_SPECIALFX) == 0) return -2;
+			*((D3DXVECTOR4*)value) = Mtrl[idx].SpecialFX;
+			return 0;
+		}
+		return 5;
+	}
+	return 5;
 }
 
 // ===========================================================================================
@@ -1450,7 +1465,7 @@ void D3D9Mesh::Render(const LPD3DXMATRIX pW, int iTech, LPDIRECT3DCUBETEXTURE9 *
 	D3D9Stats.Mesh.Meshes++;
 
 	D3D9MatExt *mat, *old_mat = NULL;
-	LPD3D9CLIENTSURFACE old_tex = NULL;
+	SURFHANDLE old_tex = NULL;
 
 	pDev->SetVertexDeclaration(pMeshVertexDecl);
 	pDev->SetStreamSource(0, pBuf->pVB, 0, sizeof(NMVERTEX));
@@ -1912,7 +1927,7 @@ void D3D9Mesh::RenderSimplified(const LPD3DXMATRIX pW, LPDIRECT3DCUBETEXTURE9 *p
 	HR(D3D9Effect::FX->SetBool(D3D9Effect::eBaseBuilding, bSP));
 
 	D3D9MatExt *mat, *old_mat = NULL;
-	LPD3D9CLIENTSURFACE old_tex = NULL;
+	SURFHANDLE old_tex = NULL;
 	TexFlow FC;	reset(FC);
 
 	pDev->SetVertexDeclaration(pMeshVertexDecl);
@@ -2202,7 +2217,7 @@ void D3D9Mesh::RenderFast(const LPD3DXMATRIX pW, int iTech)
 	D3D9Stats.Mesh.Meshes++;
 
 	D3D9MatExt *mat, *old_mat = NULL;
-	LPD3D9CLIENTSURFACE old_tex = NULL;
+	SURFHANDLE old_tex = NULL;
 	LPDIRECT3DTEXTURE9 pEmis_old = NULL;
 
 	pDev->SetVertexDeclaration(pMeshVertexDecl);
@@ -2518,7 +2533,7 @@ void D3D9Mesh::RenderBaseTile(const LPD3DXMATRIX pW)
 	D3DXVECTOR4 Field = D9LinearFieldOfView(scn->GetProjectionMatrix());
 
 	D3D9MatExt *mat, *old_mat = NULL;
-	LPD3D9CLIENTSURFACE old_tex = NULL;
+	SURFHANDLE old_tex = NULL;
 	LPDIRECT3DTEXTURE9  pNorm = NULL;
 
 	pDev->SetVertexDeclaration(pMeshVertexDecl);

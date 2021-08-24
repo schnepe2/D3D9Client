@@ -102,7 +102,7 @@ void ShellMFD::ExitModule(HINSTANCE hDLL)
 
 // ============================================================================================================
 //
-LONG_PTR ShellMFD::MsgProc(UINT msg, UINT mfd, WPARAM wparam, LPARAM lparam)
+OAPI_MSGTYPE ShellMFD::MsgProc(UINT msg, UINT mfd, WPARAM wparam, LPARAM lparam)
 {
 
     if (msg==OAPI_MSG_MFD_OPENED && MFDList) {	
@@ -119,7 +119,7 @@ LONG_PTR ShellMFD::MsgProc(UINT msg, UINT mfd, WPARAM wparam, LPARAM lparam)
 					//
 					MFDList[i].hTrue->UpdateDimensions(LOWORD(wparam), HIWORD(wparam));
 
-					return (LONG_PTR) new ShellMFD(LOWORD(wparam), HIWORD(wparam), (VESSEL*)lparam, MFDList[i].hTrue, mfd);
+					return (OAPI_MSGTYPE) new ShellMFD(LOWORD(wparam), HIWORD(wparam), (VESSEL*)lparam, MFDList[i].hTrue, mfd);
 				}
 			}
 		}

@@ -148,7 +148,7 @@ public:
 
 					D3D9Mesh(const char *fname);
 					D3D9Mesh(DWORD nGrp, const MESHGROUPEX **hGroup, const SURFHANDLE *hSurf);
-					D3D9Mesh(const MESHGROUPEX *pGroup, const MATERIAL *pMat, D3D9ClientSurface *pTex);
+					D3D9Mesh(const MESHGROUPEX *pGroup, const MATERIAL *pMat, SurfNative *pTex);
 					D3D9Mesh(MESHHANDLE hMesh, bool asTemplate = false, D3DXVECTOR3 *reorig = NULL, float *scale = NULL, const char *meshName = NULL);
 					D3D9Mesh(MESHHANDLE hMesh, const D3D9Mesh &hTemp);
 					~D3D9Mesh();
@@ -190,7 +190,7 @@ public:
 	 * \brief Returns number of material specifications.
 	 * \return Number of materials.
 	 */
-	SURFHANDLE		GetTexture(DWORD idx) const { return Tex[idx]; }
+	SURFHANDLE		GetTexture(DWORD idx) const { return (SURFHANDLE)Tex[idx]; }
 	bool			HasTexture(SURFHANDLE hSurf) const;
 	bool			IsReflective() const { return bIsReflective | (DefShader==SHADER_METALNESS); }
 
@@ -203,7 +203,8 @@ public:
 	bool			GetMaterial(D3D9MatExt *pMat, DWORD idx) const;
 	void			SetMaterial(const D3D9MatExt *pMat, DWORD idx, bool bUpdateStatus = true);
 	void			SetMaterial(const D3DMATERIAL9 *pMat, DWORD idx, bool bUpdateStatus = true);
-	int				Material(DWORD grp, int mid, FVECTOR4 *value, bool bSet);
+	int				SetMaterialEx(DWORD idx, MatProp mid, const FVECTOR4* in);
+	int				GetMaterialEx(DWORD idx, MatProp mid, FVECTOR4* out);
 	bool			GetTexTune(D3D9Tune *pT, DWORD idx) const;
 	void			SetTexTune(const D3D9Tune *pT, DWORD idx);
 
@@ -235,7 +236,7 @@ public:
 	 * \param tex texture handle
 	 * \return \e true on success, \e false otherwise.
 	 */
-	bool			SetTexture(DWORD texidx, LPD3D9CLIENTSURFACE tex);
+	bool			SetTexture(DWORD texidx, SURFHANDLE tex);
 	void			SetTexMixture (DWORD ntex, float mix);
 
 	void			RenderGroup(const GROUPREC *grp);
@@ -298,7 +299,7 @@ private:
 	DWORD nTex;                 // number of mesh textures
 	DWORD vClass;
 	D3D9MatExt *Mtrl;           // list of mesh materials
-	LPD3D9CLIENTSURFACE *Tex;	// list of mesh textures
+	SurfNative **Tex;			// list of mesh textures
 	D3D9Tune *pTune;
 	D3DXMATRIX mTransform;
 	D3DXMATRIX mTransformInv;
